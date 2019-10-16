@@ -1,0 +1,11 @@
+[package]
+name = "leslie_lamport"
+version = "0.1.0"
+authors = ["0xSilene <51803887+0xSilene@users.noreply.github.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+blake2-rfc = "0.2.18"
+getrandom = "0.1.12"
