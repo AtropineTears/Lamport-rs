@@ -3,6 +3,7 @@ name = "leslie_lamport"
 version = "0.2.0"
 authors = ["0xSilene <51803887+0xSilene@users.noreply.github.com>","AtropineTears"]
 edition = "2018"
+description = "A Post-Quantum Cryptographic Library For Lamport Signatures"
 repository = "https://github.com/0xSilene/Winternitz-OTS"
 keywords = ["crypto", "cryptography", "post-quantum", "security", "signature"]
 categories = ["cryptography", "authentication","algorithms"]
