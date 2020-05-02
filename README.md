@@ -21,10 +21,10 @@ fn main(){
     let keypair = LamportKeyPair::generate(Algorithms::OS_SHA256);
     
     // Generate Keypair using Operating System SHA512
-    let _keypair_sha512 = LamportKeyPair::generate(Algorithms::OS_SHA512);
+    let keypair_sha512 = LamportKeyPair::generate(Algorithms::OS_SHA512);
     
     // Generate Keypair using Rust Library For Blake2b
-    let _keypair_sha512 = LamportKeyPair::generate(Algorithms::BLAKE2B);
+    let keypair_blake2b = LamportKeyPair::generate(Algorithms::BLAKE2B);
 }
 ```
 
