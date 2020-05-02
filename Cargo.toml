@@ -19,3 +19,4 @@ hex = "0.4.2"
 blake2-rfc = "0.2.18"
 crypto-hash = "0.3.4"
 serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.8"
