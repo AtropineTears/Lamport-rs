@@ -15,7 +15,7 @@ use hex;
 
 
 /// # Hashing Algorithms
-/// This lists the Algorithms available to hash the secret key from and generate/verify the public key.
+/// This Lists the Algorithms available to Hash the Secret Key from, Generate, and Verify The Signature Against the Public Key.
 /// - OS_SHA256 (Operating System **SHA256** using `crypto-hash`)
 /// - OS_SHA512 (Operating System **SHA512** using `crypto-hash`)
 /// - BLAKE2B (Rust Library For **Blake2b** using `blake2-rfc`)
@@ -25,6 +25,7 @@ pub enum Algorithms {
     OS_SHA256,
     OS_SHA512,
     BLAKE2B,
+    BLAKE2B_64,
 }
 
 /// # Lamport Keypair
@@ -43,10 +44,9 @@ pub enum Algorithms {
 /// - `n` = `64` | Generates 1024 keypairs that can sign up to 64 bytes (512 bits)
 /// - `d` = `32` | Generates a Secret Key Size of 32 bytes (256 bits)
 /// 
-/// 
+/// ## Generation and Signing
 /// ```
-/// 
-/// use leslie_lamport::LamportKeyPair;
+/// use leslie_lamport::{LamportKeyPair,Algorithms};
 /// 
 /// // Basic Generation Using SHA256
 /// let keypair = LamportKeyPair::generate(Algorithms::OS_SHA256);
@@ -58,6 +58,22 @@ pub enum Algorithms {
 /// let signature = keypair_advanced.sign("15DCED7133EFF6837E7B51768EA7F134");
 /// 
 /// ```
+/// 
+/// ## Serialization
+/// ```
+/// use leslie_lamport::LamportKeyPair;
+/// use serde_yaml;
+/// 
+/// 
+/// // Basic Generation Using SHA256
+/// let keypair = LamportKeyPair::generate(Algorithms::OS_SHA256);
+/// 
+/// // Serialization Of Keypair To YAML String (Keep Private)
+/// let serialized_keypair = serde_yaml::to_string(&keypair);
+/// 
+/// ```
+/// 
+/// This struct derives **Serialize** and **Deserialize** from **serde**.
 #[derive(Debug,Clone,PartialEq,PartialOrd,Hash,Serialize,Deserialize)]
 pub struct LamportKeyPair {
     hash: Algorithms,
@@ -66,12 +82,29 @@ pub struct LamportKeyPair {
 }
 
 /// # Lamport Signature
-/// This struct contains:
-/// - The Hashing Algorithm
-/// - The Public Key
-/// - The Input String
-/// - The Signature
-/// Its only function is for verification purposes
+/// After Signing with the `LamportKeyPair` struct, you can keep the `LamportSignature` struct **Public**. Your `LamportKeyPair` will now be useless for signing as it's a **One-Time Signature**.
+/// 
+/// This Struct Contains:
+/// - The Hashing Algorithm as `Enum Algorithms`
+/// - The Public Key as a `Vector<Strings>`
+/// - The Input String as a `String`
+/// - The Signature as a `Vector<Strings>`
+/// 
+/// ## Example Usage
+/// Its only Function is for **Verification Purposes**
+/// 
+/// ```
+/// use leslie_lamport::{LamportKeyPair,Algorithms,LamportSignature};
+/// 
+/// // Generate Keypair
+/// let keypair = LamportKeyPair::generate(Algorithms::OS_SHA256);
+/// 
+/// // Generates a "LamportSignature" Struct for a One-Time Signature For a 512-bit Hexadecimal String
+/// let signature = keypair.sign("A55FE31CB83313443F38356A065F9E6386BE591C30490ECC6994B0C152D46D80ABC010DF01257FFEC437402967995D5C34EAD950E0C62C3BCAFF34BCEFB3BDF7")
+/// 
+/// // Verify Signature
+/// let is_verified: bool = signature.verify();
+/// ```
 #[derive(Debug,Clone,PartialEq,PartialOrd,Hash,Serialize,Deserialize)]
 pub struct LamportSignature {
     hash: Algorithms,
@@ -82,22 +115,31 @@ pub struct LamportSignature {
 
 impl LamportKeyPair {
     /// # Lamport Keypair Generation
-    /// By default, 1024 keys of 32 bytes are generated which allows the signing of 512 bits.
+    /// By default, 1024 keys of 32 bytes (`d`) are generated which allows the signing of 512 bits (`n`).
     /// 
-    /// The Secret Key (d) can be changed to 32,48, 64, or 128 in the code itself.
+    /// The Secret Key (`d`) can be changed to 32,48,64,or 128 in the `generate_advanced()` function
     /// 
     /// The Hashing Algorithm can be changed to:
     /// - OS_SHA256 (Uses OS)
     /// - OS_SHA512 (Uses OS)
     /// - BLAKE2B (Uses Rust Library)
+    /// - BLAKE2B_64 (Uses Rust Library)
     /// 
     /// ## Example Code
     /// 
     /// ```
-    /// use leslie_lamport::*;
+    /// use leslie_lamport::{LamportKeyPair,Algorithms};
     /// 
     /// fn main(){
+    /// 
     ///     let keypair = LamportKeyPair::generate(Algorithms::OS_SHA256);
+    /// 
+    ///     let keypair_sha512 = LamportKeyPair::generate(Algorithms::OS_SHA512);
+    /// 
+    ///     let keypair_blake2b = LamportKeyPair::generate(Algorithms::BLAKE2B);
+    /// 
+    ///     let keypair_blake2b_64 = LamportKeyPair::generate(Algorithms::BLAKE2B_64);
+    /// 
     /// }
     /// ```
     pub fn generate(hash: Algorithms) -> LamportKeyPair {
@@ -117,10 +159,10 @@ impl LamportKeyPair {
     /// 
     /// This function is for the users who want more control over the generation of their **LamportKeyPair**. It controls the Number of Keypairs
     /// 
-    /// - `hash ∈ {OS_SHA256,OS_SHA512,BLAKE2B}`
+    /// - `hash ∈ {OS_SHA256,OS_SHA512,BLAKE2B,BLAKE2B_64}`
     ///     - Chooses The Hashing Function That Is Used To Generate The **Public Key** and Used For **Verification**
-    ///     - **OS_SHA256** and **OS_SHA512** use the Operating Systems Crypto API
-    ///     - **BlAKE2B** uses the Rust Library Blake2b-rfc
+    ///     - **OS_SHA256** and **OS_SHA512** use the Operating Systems Crypto API using `crypto-hash`
+    ///     - **BlAKE2B** and **BLAKE2B_64** use the Rust Library `Blake2-rfc`
     /// - `n`
     ///     - **Default:** 64 (512 bits)
     ///     - The **Number of Bytes That Can Be Signed** with the Keypair Generated
@@ -130,8 +172,9 @@ impl LamportKeyPair {
     ///     - The Size of a **Private Key** and **Signature** in Bytes
     ///     - Larger values of `d` are more Secure
     /// 
+    /// ## Example
     /// ```
-    /// use leslie_lamport::LamportKeyPair;
+    /// use leslie_lamport::{LamportKeyPair,Algorithms};
     /// 
     /// fn main(){
     /// 
@@ -140,6 +183,9 @@ impl LamportKeyPair {
     ///     // d | Secret Key Size of 64 bytes (512 bits)
     ///     // Params | (hash, n , d)
     ///     let keypair = generate_advanced(Algorithms::OS_SHA256,32,64);
+    /// 
+    ///     // Signs 32 bytes with 512 keypairs (`n`)
+    ///     let sig = keypair.sign("843868CD905B2AC82D4D692B5E00633CE986C289F728F46826CA48C47E16FBA6")
     /// 
     /// }
     /// ```
@@ -160,7 +206,7 @@ impl LamportKeyPair {
 
     }
     
-    /// # Generate Secret Key
+    /// Internal Generation For Secret Key
     fn generate_sk(n: usize,d: usize) -> Vec<String> {
         // Initialize Empty Vector That Will Be Of Size n
         let mut sk_vec = Vec::new();
@@ -197,6 +243,7 @@ impl LamportKeyPair {
         }
         return sk_vec
     }
+    /// Internal Generation For Public Key
     fn generate_pk(sk_vec: Vec<String>,hash: Algorithms) -> Vec<String> {
         // Initialize Public Key Vector
         let mut pk_vec = Vec::new();
@@ -206,25 +253,48 @@ impl LamportKeyPair {
                 Algorithms::OS_SHA256 => pk_vec.push(os_hash_sha256(sk.to_string())),
                 Algorithms::OS_SHA512 => pk_vec.push(os_hash_sha512(sk.to_string())),
                 Algorithms::BLAKE2B => pk_vec.push(hash_blake2b(sk.to_string())),
+                Algorithms::BLAKE2B_64 => pk_vec.push(hash_blake2b_64(sk.to_string())),
             }
         }
         return pk_vec
     }
-    /// # Signature
-    /// **The Input String Must Be Hexadecimal**
+    /// A Function To Sign A **Hexadecimal String** of `n` bytes (which is converted to Binary Format)
     /// 
-    /// Signs up to a 512 bit String when n = 64
+    /// The Function Also Checks The Given Amount of Public Keys and Checks Whether The Input Is Too Large or Too Small.
+    /// 
+    /// - If Too Large:
+    ///     - It Panics
+    /// - If The Number Of Public Keys Cannot be Divided by `8` & `2` (so not in byte form):
+    ///     - It Panics
+    /// - If Too Small:
+    ///     - A Notice is Printed
+    /// - If Just Right:
+    ///     - A Notice is Printed
     pub fn sign(&self, input: &str) -> LamportSignature {
         // Convert Bytes as Hexadecimal
         let bytes = hex::decode(input).unwrap();
+
+        // Get (`n`), or number of bytes that can be signed with the given public key
+        let pk_bytes: usize = self.pk.len() / 8 / 2;
         
-        if bytes.len() > 64 {
+        // TODO| Fix this so this is size of public key
+        if bytes.len() > pk_bytes {
             // TODO: Add a slightly less invasive panic
-            panic!("More Than 64 Bytes Provided");
+            panic!("[Error] There are More Bytes than can be Signed with the Given Amount of Public Keys");
+        }
+        // TODO| Fix messages
+        else if bytes.len() < pk_bytes {
+            println!("[Notice] Signing Less Than Number Of Public Keys")
+        }
+        else if bytes.len() == pk_bytes {
+            // Perfect
+        }
+        else {
+            panic!("[Error] An Error Has Occured In Signing. The Public Key may not be in Number of Bytes, or Divisible by 8 and 2.")
         }
         
         // Initialize String
-        let mut bin_string = "".to_string();
+        let mut bin_string = String::new();
 
         for byte in bytes {
             bin_string.push_str(&format!("{:08b}",byte));
@@ -259,27 +329,55 @@ impl LamportKeyPair {
 }
 
 impl LamportSignature {
+    /// The Verify Function that returns a `boolean` value when verifying whether the signature matches the public key and input
+    /// 
+    /// It must:
+    /// - The **Number of Public Keys** must be divisible by `8` and then `2` to retrieve `n`
+    /// - THe **Number of Signatures** must be at most half of the Public Keys
+    /// - The **Input** Must Be At Most The Size Of `n` in Bytes And Be In **Hexadecimal** (which is converted to binary)
     pub fn verify(&self) -> bool {
+        // Get Bytes From Hexadecimal
         let bytes = hex::decode(&self.input).unwrap();
+
+        // Get `n`
+        let pk_bytes = self.pk.len() / 8 / 2;
         
-        if bytes.len() > 64 {
+        // Check Bytes Against Public Key
+        if bytes.len() > pk_bytes {
             // TODO: Add a slightly less invasive panic
-            panic!("More Than 64 Bytes Provided");
+            panic!("[Error] Failure To Verify As Number of Public Keys is Too Small For Given Input");
+        }
+        else if bytes.len() < pk_bytes {
+            println!("[Notice] There are More Public Keys Than Needed For The Given Input");
+        }
+        else if bytes.len() == pk_bytes {
+            // Perfect
+        }
+        else {
+            panic!("[Error] An Error Has Occured In Verifying. The Public Key may not be in Number of Bytes, or Divisible by 8 and 2.")
         }
         
         // Initialize String
-        let mut bin_string = "".to_string();
+        let mut bin_string = String::new();
 
         for byte in bytes {
             bin_string.push_str(&format!("{:08b}",byte));
         }
 
-        let mut hash_choice = 0;
+        // TODO| Can Remove In Future
+        //let mut hash_choice: usize = 0;
 
-        match &self.hash {
-            Algorithms::OS_SHA256 => hash_choice = 1,
-            Algorithms::OS_SHA512 => hash_choice = 2,
-            Algorithms::BLAKE2B => hash_choice = 3,
+        let hash_choice = match self.hash {
+            Algorithms::OS_SHA256 => 1usize,
+            Algorithms::OS_SHA512 => 2usize,
+            Algorithms::BLAKE2B => 3usize,
+            Algorithms::BLAKE2B_64 => 4usize,
+            _ => 0usize,
+        };
+        
+        // General Check To See If Hash Function Is Not Specified
+        if hash_choice != 1usize && hash_choice != 2usize && hash_choice != 3usize && hash_choice != 4usize {
+            panic!("[Error] Cannot Determine Hash Function For Verification")
         }
 
         let mut counter: usize = 0;
@@ -306,6 +404,14 @@ impl LamportSignature {
                 }
                 else if hash_choice == 3 {
                     if hash_blake2b(self.signature[counter].clone()) == self.pk[counter_pk] {
+
+                    }
+                    else {
+                        return false
+                    }
+                }
+                else if hash_choice == 4 {
+                    if hash_blake2b_64(self.signature[counter].clone()) == self.pk[counter_pk] {
 
                     }
                     else {
@@ -342,6 +448,14 @@ impl LamportSignature {
                         return false
                     }
                 }
+                else if hash_choice == 4 {
+                    if hash_blake2b_64(self.signature[counter].clone()) == self.pk[counter_pk + 1usize] {
+
+                    }
+                    else {
+                        return false
+                    }
+                }
                 else {
                     panic!("An Error Has Occured In Verifying")
                 }
@@ -350,21 +464,28 @@ impl LamportSignature {
             counter_pk = counter_pk + 2usize;
         }
         return true
-
-
     }
 }
 
-
+/// Private Hash Blake2b (32byte Digest)
 fn hash_blake2b(input: String) -> String {
     let mut context = Blake2b::new(32);
     context.update(&hex::decode(input).unwrap());
     let hash = hex::encode(context.finalize().as_bytes());
     return hash
 }
+/// Private Hash Blake2b (64byte Digest)
+fn hash_blake2b_64(input: String) -> String {
+    let mut context = Blake2b::new(64);
+    context.update(&hex::decode(input).unwrap());
+    let hash = hex::encode(context.finalize().as_bytes());
+    return hash
+}
+/// Private Hash OS_SHA256 (32byte Digest)
 fn os_hash_sha256(input: String) -> String {
     return hex_digest(Algorithm::SHA256, &hex::decode(input).unwrap());
 }
+/// Private Hash OS_SHA512 (64byte Digest)
 fn os_hash_sha512(input: String) -> String {
     return hex_digest(Algorithm::SHA512, &hex::decode(input).unwrap());
 }
@@ -404,16 +525,9 @@ fn generate_sha512(){
 
 #[test]
 fn generate_blake2b(){
-    let _keypair = LamportKeyPair::generate(Algorithms::BLAKE2B);
-}
+    let keypair = LamportKeyPair::generate(Algorithms::BLAKE2B);
 
+    let sig = keypair.sign("b7dba1bc67c531bffb14fbd7f6948540dba10981765a0538575bed2b6bf553d43f35c287635ef7c4cb2c379f71218edaf70d5d73844910684103b99916e428c2");
 
-
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
+    let _verified = sig.verify();
 }
