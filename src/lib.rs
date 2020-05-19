@@ -1,6 +1,6 @@
 #[allow(unreachable_patterns)]
 
-
+/// random.rs file using `getrandom` crate for sizes {32,48,64,128}
 mod random;
 
 use serde::{Serialize, Deserialize};
