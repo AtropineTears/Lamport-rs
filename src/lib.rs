@@ -1,3 +1,6 @@
+#[allow(unreachable_patterns)]
+
+
 mod random;
 
 use serde::{Serialize, Deserialize};
@@ -60,8 +63,9 @@ pub enum Algorithms {
 /// ```
 /// 
 /// ## Serialization
+/// 
 /// ```
-/// use leslie_lamport::LamportKeyPair;
+/// use leslie_lamport::{LamportKeyPair,Algorithms};
 /// use serde_yaml;
 /// 
 /// 
@@ -91,7 +95,7 @@ pub struct LamportKeyPair {
 /// - The Signature as a `Vector<Strings>`
 /// 
 /// ## Example Usage
-/// Its only Function is for **Verification Purposes**
+/// Its Only Function is for **Verification Purposes**
 /// 
 /// ```
 /// use leslie_lamport::{LamportKeyPair,Algorithms,LamportSignature};
@@ -100,10 +104,11 @@ pub struct LamportKeyPair {
 /// let keypair = LamportKeyPair::generate(Algorithms::OS_SHA256);
 /// 
 /// // Generates a "LamportSignature" Struct for a One-Time Signature For a 512-bit Hexadecimal String
-/// let signature = keypair.sign("A55FE31CB83313443F38356A065F9E6386BE591C30490ECC6994B0C152D46D80ABC010DF01257FFEC437402967995D5C34EAD950E0C62C3BCAFF34BCEFB3BDF7")
+/// let signature = keypair.sign("A55FE31CB83313443F38356A065F9E6386BE591C30490ECC6994B0C152D46D80ABC010DF01257FFEC437402967995D5C34EAD950E0C62C3BCAFF34BCEFB3BDF7");
 /// 
 /// // Verify Signature
 /// let is_verified: bool = signature.verify();
+/// 
 /// ```
 #[derive(Debug,Clone,PartialEq,PartialOrd,Hash,Serialize,Deserialize)]
 pub struct LamportSignature {
@@ -173,8 +178,9 @@ impl LamportKeyPair {
     ///     - Larger values of `d` are more Secure
     /// 
     /// ## Example
+    /// 
     /// ```
-    /// use leslie_lamport::{LamportKeyPair,Algorithms};
+    /// use leslie_lamport::{LamportKeyPair,Algorithms,LamportSignature};
     /// 
     /// fn main(){
     /// 
@@ -182,14 +188,14 @@ impl LamportKeyPair {
     ///     // n | Generates a Keypair For Signing 32 bytes (256 bits)
     ///     // d | Secret Key Size of 64 bytes (512 bits)
     ///     // Params | (hash, n , d)
-    ///     let keypair = generate_advanced(Algorithms::OS_SHA256,32,64);
+    ///     let keypair = LamportKeyPair::generate_advanced(Algorithms::OS_SHA256,32,64);
     /// 
     ///     // Signs 32 bytes with 512 keypairs (`n`)
-    ///     let sig = keypair.sign("843868CD905B2AC82D4D692B5E00633CE986C289F728F46826CA48C47E16FBA6")
+    ///     let sig = keypair.sign("843868CD905B2AC82D4D692B5E00633CE986C289F728F46826CA48C47E16FBA6");
     /// 
     /// }
     /// ```
-    pub fn generate_advanced(hash: Algorithms,n: usize,d: usize) -> LamportKeyPair{
+    pub fn generate_advanced(hash: Algorithms,n: usize,d: usize) -> LamportKeyPair {
         if d == 32usize || d == 48usize || d == 64usize || d == 128usize {
             let sk = LamportKeyPair::generate_sk(n,d);
             let pk = LamportKeyPair::generate_pk(sk.clone(), hash);
@@ -201,9 +207,8 @@ impl LamportKeyPair {
             }
         }
         else {
-            panic!("An invalid number for `d`, or the private key size, was given. The private key should be between")
+            panic!("Invalid Parameter for `d`. `d` should be a member of the set {32,48,64,128}")
         }
-
     }
     
     /// Internal Generation For Secret Key
@@ -274,20 +279,23 @@ impl LamportKeyPair {
         // Convert Bytes as Hexadecimal
         let bytes = hex::decode(input).unwrap();
 
-        // Get (`n`), or number of bytes that can be signed with the given public key
-        let pk_bytes: usize = self.pk.len() / 8 / 2;
+        // Gets Bytes Length
+        let bytes_len: usize = bytes.len();
+
+        // Get (`n`), or number of bytes that can be signed with the given public key (`n` / 8 / 2)
+        let pk_bytes: usize = self.pk.len() / 16usize;
         
         // TODO| Fix this so this is size of public key
-        if bytes.len() > pk_bytes {
+        if bytes_len == pk_bytes {
+            // Perfect
+        }
+        else if bytes_len > pk_bytes {
             // TODO: Add a slightly less invasive panic
             panic!("[Error] There are More Bytes than can be Signed with the Given Amount of Public Keys");
         }
         // TODO| Fix messages
-        else if bytes.len() < pk_bytes {
+        else if bytes_len < pk_bytes {
             println!("[Notice] Signing Less Than Number Of Public Keys")
-        }
-        else if bytes.len() == pk_bytes {
-            // Perfect
         }
         else {
             panic!("[Error] An Error Has Occured In Signing. The Public Key may not be in Number of Bytes, or Divisible by 8 and 2.")
@@ -339,19 +347,21 @@ impl LamportSignature {
         // Get Bytes From Hexadecimal
         let bytes = hex::decode(&self.input).unwrap();
 
-        // Get `n`
-        let pk_bytes = self.pk.len() / 8 / 2;
+        // Get Bytes Length
+        let bytes_len: usize = bytes.len();
+
+        // Get `n` (n / 8 / 2)
+        let pk_bytes = self.pk.len() / 16usize;
         
         // Check Bytes Against Public Key
-        if bytes.len() > pk_bytes {
-            // TODO: Add a slightly less invasive panic
+        if bytes_len == pk_bytes {
+            // Perfect
+        }
+        else if bytes_len > pk_bytes {
             panic!("[Error] Failure To Verify As Number of Public Keys is Too Small For Given Input");
         }
-        else if bytes.len() < pk_bytes {
+        else if bytes_len < pk_bytes {
             println!("[Notice] There are More Public Keys Than Needed For The Given Input");
-        }
-        else if bytes.len() == pk_bytes {
-            // Perfect
         }
         else {
             panic!("[Error] An Error Has Occured In Verifying. The Public Key may not be in Number of Bytes, or Divisible by 8 and 2.")
@@ -364,9 +374,7 @@ impl LamportSignature {
             bin_string.push_str(&format!("{:08b}",byte));
         }
 
-        // TODO| Can Remove In Future
-        //let mut hash_choice: usize = 0;
-
+        #[allow(unreachable_patterns)]
         let hash_choice = match self.hash {
             Algorithms::OS_SHA256 => 1usize,
             Algorithms::OS_SHA512 => 2usize,
@@ -488,46 +496,4 @@ fn os_hash_sha256(input: String) -> String {
 /// Private Hash OS_SHA512 (64byte Digest)
 fn os_hash_sha512(input: String) -> String {
     return hex_digest(Algorithm::SHA512, &hex::decode(input).unwrap());
-}
-
-#[test]
-fn generate(){
-    let keypair = LamportKeyPair::generate(Algorithms::OS_SHA256);
-    println!("Hash: {:?}", keypair.hash);
-    let sig = keypair.sign("b7dba1bc67c531bffb14fbd7f6948540dba10981765a0538575bed2b6bf553d43f35c287635ef7c4cb2c379f71218edaf70d5d73844910684103b99916e428c2");
-    let x: bool = sig.verify();
-
-    println!("Is It Right: {}",x)
-}
-
-#[test]
-fn generate_wrong(){
-    let keypair = LamportKeyPair::generate(Algorithms::OS_SHA256);
-    println!("Hash: {:?}", keypair.hash);
-    let mut sig = keypair.sign("b7dba1bc67c531bffb14fbd7f6948540dba10981765a0538575bed2b6bf553d43f35c287635ef7c4cb2c379f71218edaf70d5d73844910684103b99916e428c2");
-    sig.input = "b7dba1bc67c531bffb14fbd7f6948540dba10981765a0538575bed2b6bf553d43f35c287635ef7c4cb2c379f71218edaf70d5d73844910684103b99916e428c3".to_string();
-    let x: bool = sig.verify();
-
-    println!("Is It Right: {}",x);
-}
-
-#[test]
-fn generate_sha512(){
-    let keypair = LamportKeyPair::generate(Algorithms::OS_SHA512);
-    println!("SHA512: {}", keypair.pk[1023]);
-
-    let sig = keypair.sign("b7dba1bc67c531bffb14fbd7f6948540dba10981765a0538575bed2b6bf553d43f35c287635ef7c4cb2c379f71218edaf70d5d73844910684103b99916e428c2");
-    let verified = sig.verify();
-
-    println!("SHA512 is verified: {}",verified);
-
-}
-
-#[test]
-fn generate_blake2b(){
-    let keypair = LamportKeyPair::generate(Algorithms::BLAKE2B);
-
-    let sig = keypair.sign("b7dba1bc67c531bffb14fbd7f6948540dba10981765a0538575bed2b6bf553d43f35c287635ef7c4cb2c379f71218edaf70d5d73844910684103b99916e428c2");
-
-    let _verified = sig.verify();
 }
