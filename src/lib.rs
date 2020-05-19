@@ -7,16 +7,18 @@ use blake2_rfc::blake2b::Blake2b;
 use hex;
 
 
-// n = Digest Size (32,48,64) to sign | How Many Bits Can We Sign
-// d = Digest Size of Private Key
-// pk_d = Digest Size of Public Key
+// hash = The Hash Function Chosen To Generate The Public Key and Verify The Signature
+// n = The Number of Bytes To Sign (and number of keypairs generated)
+// d = Secret Key Size in Bytes as a member of the set {32,48,64,128}
+
+// (unimplemented) pk_d = Digest Size of Public Key
 
 
 /// # Hashing Algorithms
-/// This lists the algorithms available to hash the secret key from.
-/// - OS_SHA256 (Operating System SHA256)
-/// - OS_SHA512 (Operating System SHA512)
-/// - BLAKE2B (Rust Library For Blake2b)
+/// This lists the Algorithms available to hash the secret key from and generate/verify the public key.
+/// - OS_SHA256 (Operating System **SHA256** using `crypto-hash`)
+/// - OS_SHA512 (Operating System **SHA512** using `crypto-hash`)
+/// - BLAKE2B (Rust Library For **Blake2b** using `blake2-rfc`)
 #[allow(non_camel_case_types)]
 #[derive(Copy,Debug,Clone,PartialEq,PartialOrd,Hash,Serialize,Deserialize)]
 pub enum Algorithms {
@@ -26,10 +28,36 @@ pub enum Algorithms {
 }
 
 /// # Lamport Keypair
-/// This struct represents a lamport keypair that ranges from secret keys of sizes:
-/// - 32 (256 bits)
-/// - 48 (384 bits)
-/// - 64 (512 bits)
+/// This Struct Represents a **LamportKeyPair**:
+/// 
+/// - `hash` | The Hash Function Chosen To Generate The Public Key and Verify The Signature
+/// - `n` | The Number of Bytes That Can Be Signed (and Keypairs Generated)
+/// - `d` | The Secret Key Size In Bytes as a member of the set {32,48,64,128}
+/// 
+/// The two most common generation functions are:
+/// - `generate(hash)`
+/// - `generate_advanced(hash,n,d)`
+/// 
+/// By default, `generate()` has as parameters:
+/// 
+/// - `n` = `64` | Generates 1024 keypairs that can sign up to 64 bytes (512 bits)
+/// - `d` = `32` | Generates a Secret Key Size of 32 bytes (256 bits)
+/// 
+/// 
+/// ```
+/// 
+/// use leslie_lamport::LamportKeyPair;
+/// 
+/// // Basic Generation Using SHA256
+/// let keypair = LamportKeyPair::generate(Algorithms::OS_SHA256);
+/// 
+/// // Advanced Generation of 256 keypairs to sign 16 bytes, Secret Key Size of 64, and using BLAKE2B
+/// let keypair_advanced = LamportKeyPair::generate_advanced(Algorithms::BLAKE2B,16,64);
+/// 
+/// // Signing 16 bytes using LamportKeyPair to Generate a LamportSignature
+/// let signature = keypair_advanced.sign("15DCED7133EFF6837E7B51768EA7F134");
+/// 
+/// ```
 #[derive(Debug,Clone,PartialEq,PartialOrd,Hash,Serialize,Deserialize)]
 pub struct LamportKeyPair {
     hash: Algorithms,
@@ -56,7 +84,7 @@ impl LamportKeyPair {
     /// # Lamport Keypair Generation
     /// By default, 1024 keys of 32 bytes are generated which allows the signing of 512 bits.
     /// 
-    /// The Secret Key (d) can be changed to 32,48, or 64 in the code itself.
+    /// The Secret Key (d) can be changed to 32,48, 64, or 128 in the code itself.
     /// 
     /// The Hashing Algorithm can be changed to:
     /// - OS_SHA256 (Uses OS)
@@ -85,15 +113,51 @@ impl LamportKeyPair {
             pk: pk,
         }
     }
-    /// Generate Advanced
-    /// This function is for the users who want more control over their LamportKeypair Generation.
-    /// - `hash ∈ {OS_SHA256,OS_SHA512,BLAKE2B}` | Chooses The Hashing Function Used For Public Key Generation
-    /// - `n` (in bytes) | The Number of Bytes that can be Signed with the Keypair
-    /// - `d ∈ {32,48,64}` (in bytes) | The Size of a Private Key in Bytes, as well as the signature elements
-    ///     - **Default:** 32 bytes
-    ///     - 
-    pub fn generate_advanced(hash: Algorithms,n: usize,d: usize){
-        let sk = LamportKeyPair::generate_sk(n,32);
+    /// # Generate-Advanced
+    /// 
+    /// This function is for the users who want more control over the generation of their **LamportKeyPair**. It controls the Number of Keypairs
+    /// 
+    /// - `hash ∈ {OS_SHA256,OS_SHA512,BLAKE2B}`
+    ///     - Chooses The Hashing Function That Is Used To Generate The **Public Key** and Used For **Verification**
+    ///     - **OS_SHA256** and **OS_SHA512** use the Operating Systems Crypto API
+    ///     - **BlAKE2B** uses the Rust Library Blake2b-rfc
+    /// - `n`
+    ///     - **Default:** 64 (512 bits)
+    ///     - The **Number of Bytes That Can Be Signed** with the Keypair Generated
+    ///     - Calculates the Number of Keypairs using `n * 8 * 2`
+    /// - `d ∈ {32,48,64,128}`
+    ///     - **Default:** 32 (256 bits)
+    ///     - The Size of a **Private Key** and **Signature** in Bytes
+    ///     - Larger values of `d` are more Secure
+    /// 
+    /// ```
+    /// use leslie_lamport::LamportKeyPair;
+    /// 
+    /// fn main(){
+    /// 
+    ///     // hash | Using the SHA256 Hashing Algorithm
+    ///     // n | Generates a Keypair For Signing 32 bytes (256 bits)
+    ///     // d | Secret Key Size of 64 bytes (512 bits)
+    ///     // Params | (hash, n , d)
+    ///     let keypair = generate_advanced(Algorithms::OS_SHA256,32,64);
+    /// 
+    /// }
+    /// ```
+    pub fn generate_advanced(hash: Algorithms,n: usize,d: usize) -> LamportKeyPair{
+        if d == 32usize || d == 48usize || d == 64usize || d == 128usize {
+            let sk = LamportKeyPair::generate_sk(n,d);
+            let pk = LamportKeyPair::generate_pk(sk.clone(), hash);
+            
+            LamportKeyPair {
+                hash: hash,
+                sk: sk,
+                pk: pk,
+            }
+        }
+        else {
+            panic!("An invalid number for `d`, or the private key size, was given. The private key should be between")
+        }
+
     }
     
     /// # Generate Secret Key
@@ -105,7 +169,7 @@ impl LamportKeyPair {
         let len: usize = n * 2 * 8;
 
 
-        // Checks whether d is 32, 48, or 64. Defaults to 32 if an invalid number is chosen.
+        // Checks whether d is 32, 48, 64, or 128. Defaults to 32 if an invalid number is chosen.
         if d == 32 { 
             for _ in 0..len {
                 sk_vec.push(hex::encode(random::random_32()));
@@ -121,12 +185,16 @@ impl LamportKeyPair {
                 sk_vec.push(hex::encode(random::random_64().to_vec()));
             }
         }
+        else if d == 128 {
+            for _ in 0..len {
+                sk_vec.push(hex::encode(random::random_128().to_vec()));
+            }
+        }
         else {
             for _ in 0..len {
                 sk_vec.push(hex::encode(random::random_32()));
             }
         }
-
         return sk_vec
     }
     fn generate_pk(sk_vec: Vec<String>,hash: Algorithms) -> Vec<String> {
