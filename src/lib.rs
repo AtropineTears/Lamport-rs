@@ -17,6 +17,7 @@ use hex;
 /// - OS_SHA256 (Operating System SHA256)
 /// - OS_SHA512 (Operating System SHA512)
 /// - BLAKE2B (Rust Library For Blake2b)
+#[allow(non_camel_case_types)]
 #[derive(Copy,Debug,Clone,PartialEq,PartialOrd,Hash,Serialize,Deserialize)]
 pub enum Algorithms {
     OS_SHA256,
@@ -73,6 +74,8 @@ impl LamportKeyPair {
     /// ```
     pub fn generate(hash: Algorithms) -> LamportKeyPair {
         // (n, d)
+            // n: bytes to be signed so keypairs generated
+            // d: size of private keys where d is a member of 32,48,64
         let sk = LamportKeyPair::generate_sk(64,32);
         let pk = LamportKeyPair::generate_pk(sk.clone(), hash);
 
@@ -81,6 +84,16 @@ impl LamportKeyPair {
             sk: sk,
             pk: pk,
         }
+    }
+    /// Generate Advanced
+    /// This function is for the users who want more control over their LamportKeypair Generation.
+    /// - `hash ∈ {OS_SHA256,OS_SHA512,BLAKE2B}` | Chooses The Hashing Function Used For Public Key Generation
+    /// - `n` (in bytes) | The Number of Bytes that can be Signed with the Keypair
+    /// - `d ∈ {32,48,64}` (in bytes) | The Size of a Private Key in Bytes, as well as the signature elements
+    ///     - **Default:** 32 bytes
+    ///     - 
+    pub fn generate_advanced(hash: Algorithms,n: usize,d: usize){
+        let sk = LamportKeyPair::generate_sk(n,32);
     }
     
     /// # Generate Secret Key
