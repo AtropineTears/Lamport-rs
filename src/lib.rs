@@ -1,7 +1,7 @@
 #[allow(unreachable_patterns)]
 
-/// random.rs file using `getrandom` crate for sizes {32,48,64,128}
-mod random;
+/// random.rs file using `getrandom` crate for `d` which is a member of {32,48,64,128}
+pub mod random;
 
 use serde::{Serialize, Deserialize};
 
@@ -14,7 +14,6 @@ use hex;
 // n = The Number of Bytes To Sign (and number of keypairs generated)
 // d = Secret Key Size in Bytes as a member of the set {32,48,64,128}
 
-// (unimplemented) pk_d = Digest Size of Public Key
 
 
 /// # Hashing Algorithms
@@ -22,6 +21,7 @@ use hex;
 /// - OS_SHA256 (Operating System **SHA256** using `crypto-hash`)
 /// - OS_SHA512 (Operating System **SHA512** using `crypto-hash`)
 /// - BLAKE2B (Rust Library For **Blake2b** using `blake2-rfc`)
+/// - BLAKE2B_64 (Rust Library For **Blake2b** using `blake2-rfc` with a digest of 64 bytes)
 #[allow(non_camel_case_types)]
 #[derive(Copy,Debug,Clone,PartialEq,PartialOrd,Hash,Serialize,Deserialize)]
 pub enum Algorithms {
@@ -75,14 +75,17 @@ pub enum Algorithms {
 /// // Serialization Of Keypair To YAML String (Keep Private)
 /// let serialized_keypair = serde_yaml::to_string(&keypair);
 /// 
+/// // Deserialization of YAML Keypair To LamportKeyPair
+/// let deserialized_keypair: LamportKeyPair = serde_yaml::from_str(&serialized_keypair).unwrap();
+/// 
 /// ```
 /// 
 /// This struct derives **Serialize** and **Deserialize** from **serde**.
 #[derive(Debug,Clone,PartialEq,PartialOrd,Hash,Serialize,Deserialize)]
 pub struct LamportKeyPair {
-    hash: Algorithms,
-    sk: Vec<String>,
-    pk: Vec<String>,
+    pub hash: Algorithms,
+    pub sk: Vec<String>,
+    pub pk: Vec<String>,
 }
 
 /// # Lamport Signature
@@ -112,10 +115,10 @@ pub struct LamportKeyPair {
 /// ```
 #[derive(Debug,Clone,PartialEq,PartialOrd,Hash,Serialize,Deserialize)]
 pub struct LamportSignature {
-    hash: Algorithms,
-    pk: Vec<String>,
-    input: String,
-    signature: Vec<String>,
+    pub hash: Algorithms,
+    pub pk: Vec<String>,
+    pub input: String,
+    pub signature: Vec<String>,
 }
 
 impl LamportKeyPair {

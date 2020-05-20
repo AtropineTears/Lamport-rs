@@ -109,3 +109,102 @@ mod simple_signing_tests {
         assert_eq!(verification, true);
     }
 }
+#[cfg(test)]
+mod simple_verification {
+    #[allow(unused_imports)]
+    use leslie_lamport::{LamportKeyPair,Algorithms,LamportSignature};
+    #[test]
+    fn verify_sha256(){
+        let keypair = LamportKeyPair::generate(Algorithms::OS_SHA256);
+        let sig = keypair.sign("da329e6afb23429177b3a98aad8f3ee6a230614973513485e039b08817bb2d8017376b56b6f3c6d525c2f007a5f765a6be035edda4fadc9c8f5c744152b1745c");
+        let verification = sig.verify();
+
+        assert_eq!(verification, true);
+    }
+    #[test]
+    fn verify_sha512() {
+        let keypair = LamportKeyPair::generate(Algorithms::OS_SHA512);
+        let sig = keypair.sign("da329e6afb23429177b3a98aad8f3ee6a230614973513485e039b08817bb2d8017376b56b6f3c6d525c2f007a5f765a6be035edda4fadc9c8f5c744152b1745c");
+        let verification = sig.verify();
+
+        assert_eq!(verification, true);
+    }
+    #[test]
+    fn verify_blake2b(){
+        let keypair = LamportKeyPair::generate(Algorithms::BLAKE2B);
+        let sig = keypair.sign("da329e6afb23429177b3a98aad8f3ee6a230614973513485e039b08817bb2d8017376b56b6f3c6d525c2f007a5f765a6be035edda4fadc9c8f5c744152b1745c");
+        let verification = sig.verify();
+
+        assert_eq!(verification, true);
+    }
+    #[test]
+    fn verify_blake2b_64(){
+        let keypair = LamportKeyPair::generate(Algorithms::BLAKE2B_64);
+        let sig = keypair.sign("da329e6afb23429177b3a98aad8f3ee6a230614973513485e039b08817bb2d8017376b56b6f3c6d525c2f007a5f765a6be035edda4fadc9c8f5c744152b1745c");
+        let verification = sig.verify();
+
+        assert_eq!(verification, true);
+    }
+    #[test]
+    #[should_panic]
+    fn panic_verify_extra_byte_in_input(){
+        let keypair = LamportKeyPair::generate(Algorithms::BLAKE2B_64);
+        let mut sig = keypair.sign("da329e6afb23429177b3a98aad8f3ee6a230614973513485e039b08817bb2d8017376b56b6f3c6d525c2f007a5f765a6be035edda4fadc9c8f5c744152b1745c");
+        sig.input = "da329e6afb23429177b3a98aad8f3ee6a230614973513485e039b08817bb2d8017376b56b6f3c6d525c2f007a5f765a6be035edda4fadc9c8f5c744152b1745c00".to_string();
+        let verification = sig.verify();
+
+        assert_eq!(verification, false);
+    }
+    #[test]
+    fn verify_wrong_signature(){
+        let keypair = LamportKeyPair::generate(Algorithms::BLAKE2B_64);
+        let mut sig = keypair.sign("da329e6afb23429177b3a98aad8f3ee6a230614973513485e039b08817bb2d8017376b56b6f3c6d525c2f007a5f765a6be035edda4fadc9c8f5c744152b1745c");
+        sig.signature[511] = "da329e6afb23429177b3a98aad8f3ee6a230614973513485e039b08817bb2d8017376b56b6f3c6d525c2f007a5f765a6be035edda4fadc9c8f5c744152b1745c".to_string();
+        let verification = sig.verify();
+
+        assert_eq!(verification, false);
+    }
+    #[test]
+    fn verify_wrong_input(){
+        let keypair = LamportKeyPair::generate(Algorithms::BLAKE2B_64);
+        let mut sig = keypair.sign("da329e6afb23429177b3a98aad8f3ee6a230614973513485e039b08817bb2d8017376b56b6f3c6d525c2f007a5f765a6be035edda4fadc9c8f5c744152b1745c");
+        sig.input = "da329e6afb23429177b3a98aad8f3ee6a230614973513485e039b08817bb2d8017376b56b6f3c6d525c2f007a5f765a6be035edda4fadc9c8f5c744152b1845c".to_string();
+        let verification = sig.verify();
+
+        assert_eq!(verification, false);
+    }
+    #[test]
+    fn verify_wrong_pk_but_right_bit(){
+        let keypair = LamportKeyPair::generate(Algorithms::OS_SHA256);
+        let mut sig = keypair.sign("da329e6afb23429177b3a98aad8f3ee6a230614973513485e039b08817bb2d8017376b56b6f3c6d525c2f007a5f765a6be035edda4fadc9c8f5c744152b1745c");
+        sig.pk[1023] = "da329e6afb23429177b3a98aad8f3ee6a230614973513485e039b08817bb2d8017376b56b6f3c6d525c2f007a5f765a6be035edda4fadc9c8f5c744152b1845c".to_string();
+        let verification: bool = sig.verify();
+
+        assert_eq!(verification, true);
+    }
+    #[test]
+    fn verify_wrong_pk() {
+        let keypair = LamportKeyPair::generate(Algorithms::OS_SHA256);
+        let mut sig = keypair.sign("da329e6afb23429177b3a98aad8f3ee6a230614973513485e039b08817bb2d8017376b56b6f3c6d525c2f007a5f765a6be035edda4fadc9c8f5c744152b1745c");
+        sig.pk[1022] = "da329e6afb23429177b3a98aad8f3ee6a230614973513485e039b08817bb2d8017376b56b6f3c6d525c2f007a5f765a6be035edda4fadc9c8f5c744152b1845c".to_string();
+        let verification: bool = sig.verify();
+
+        assert_eq!(verification, false);
+    }
+}
+
+#[cfg(test)]
+mod random_tests {
+    use leslie_lamport::random;
+    #[test]
+    fn retrieve_all() {
+        let _r32 = random::random_32();
+        let _r48 = random::random_48();
+        let _r64 = random::random_64();
+        let _r128 = random::random_128();
+    }
+    #[test]
+    fn retrieve_32(){
+        let _random: [u8;32] = random::random_32();
+    }
+}
