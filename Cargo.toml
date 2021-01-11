@@ -1,10 +1,10 @@
 [package]
 name = "leslie_lamport"
-version = "0.3.0"
-authors = ["0xSilene <51803887+0xSilene@users.noreply.github.com>","AtropineTears"]
+version = "0.3.1"
+authors = ["0xAtropine"]
 edition = "2018"
 description = "A Post-Quantum Cryptographic Library For Lamport Signatures"
-repository = "https://github.com/0xSilene/Leslie-Lamport"
+repository = "https://github.com/0xAtropine/Leslie-Lamport"
 keywords = ["crypto", "cryptography", "post-quantum", "security", "signature"]
 categories = ["cryptography", "authentication","algorithms"]
 license = "MIT OR Apache-2.0"
