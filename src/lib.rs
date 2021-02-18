@@ -5,8 +5,11 @@ pub mod random;
 
 use serde::{Serialize, Deserialize};
 
+// Hashing Algorithms
 use crypto_hash::{Algorithm, hex_digest};
 use blake2_rfc::blake2b::Blake2b;
+
+// Hexadecimal
 use hex;
 
 
