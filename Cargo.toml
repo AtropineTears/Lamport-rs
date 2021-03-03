@@ -1,6 +1,6 @@
 [package]
 name = "leslie_lamport"
-version = "0.3.1"
+version = "0.4.0"
 authors = ["0xAtropine"]
 edition = "2018"
 description = "A Post-Quantum Cryptographic Library For Lamport Signatures"
@@ -25,9 +25,17 @@ name = "advanced_generation"
 path = "examples/advanced_generation.rs"
 
 [dependencies]
-getrandom = "0.1.16"
+# Used to be 0.1.16
+getrandom = "0.2.2"
+
+# Data Format
 hex = "0.4.2"
+
+# Hash Functions
 blake2-rfc = "0.2.18"
 crypto-hash = "0.3.4"
+
+# Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.8.12"
+bincode = "1.3.2"

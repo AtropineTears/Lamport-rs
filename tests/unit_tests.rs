@@ -68,24 +68,26 @@ mod simple_signing_tests {
     #[test]
     fn sign_sha256(){
         let keypair = LamportKeyPair::generate(Algorithms::OS_SHA256);
-        let _sig = keypair.sign("B8E8F75AA31A62B9083A70A5414C772A860E648B078108DA13CEEF3D4550193699D5080D1255CFB3F4641EC16852A28A7C507E7CCD58033FAE1C866B62DC6CB8");
+        let sig = keypair.sign("B8E8F75AA31A62B9083A70A5414C772A860E648B078108DA13CEEF3D4550193699D5080D1255CFB3F4641EC16852A28A7C507E7CCD58033FAE1C866B62DC6CB8");
+        let _verification = sig.verify();
     }
     #[test]
     fn sign_sha512(){
         let keypair = LamportKeyPair::generate(Algorithms::OS_SHA512);
-        let _sig = keypair.sign("C9B18725328C3CE3E9F4497A9C7E35153A5B9DFC1AA7A3C9C685EFF4F4B8C68DAB78B8187BE11310A41978148AC4C459BE8D8FBD21ED4AE10A3922E22C4A1092");
-        
+        let sig = keypair.sign("C9B18725328C3CE3E9F4497A9C7E35153A5B9DFC1AA7A3C9C685EFF4F4B8C68DAB78B8187BE11310A41978148AC4C459BE8D8FBD21ED4AE10A3922E22C4A1092");
+        let _verification = sig.verify();
     }
     #[test]
     fn sign_blake2b(){
         let keypair = LamportKeyPair::generate(Algorithms::BLAKE2B);
-        let _sig = keypair.sign("691D9AA7E47C73F3793DBEC9D1AFEBB5E46BAF08B08B10A0128AFA6D58E68D3EAA8911C62D527AB9C857A3E7E182DBB18F4E4D671233F7D3EB6BF7C25EE078DE");
-        
+        let sig = keypair.sign("691D9AA7E47C73F3793DBEC9D1AFEBB5E46BAF08B08B10A0128AFA6D58E68D3EAA8911C62D527AB9C857A3E7E182DBB18F4E4D671233F7D3EB6BF7C25EE078DE");
+        let _verification = sig.verify();
     }
     #[test]
     fn sign_blake2b_64(){
         let keypair = LamportKeyPair::generate(Algorithms::BLAKE2B_64);
-        let _sig = keypair.sign("AC084B8138498A2E1AF06F87A19EE93D3148BE57A98824CD64F4E3E3023395A44BBC58721229F66038F3B224C443B502561D99186C32D9012F850A400093AD4A");
+        let sig = keypair.sign("AC084B8138498A2E1AF06F87A19EE93D3148BE57A98824CD64F4E3E3023395A44BBC58721229F66038F3B224C443B502561D99186C32D9012F850A400093AD4A");
+        let _verification = sig.verify();
     }
 
     #[test]
@@ -206,5 +208,17 @@ mod random_tests {
     #[test]
     fn retrieve_32(){
         let _random: [u8;32] = random::random_32();
+    }
+    #[test]
+    fn retrieve_48(){
+        let _random: [u8;48] = random::random_48();
+    }
+    #[test]
+    fn retrieve_64(){
+        let _random: [u8;64] = random::random_64();
+    }
+    #[test]
+    fn retrieve_128(){
+        let _random: [u8;128] = random::random_128();
     }
 }

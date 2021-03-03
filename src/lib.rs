@@ -1,8 +1,9 @@
 #[allow(unreachable_patterns)]
 
-/// random.rs file using `getrandom` crate for `d` which is a member of {32,48,64,128}
+/// random.rs file using `getrandom` crate for `d` which is a member of {32,48,64,128}.
 pub mod random;
 
+// Serialization
 use serde::{Serialize, Deserialize};
 
 // Hashing Algorithms
@@ -16,6 +17,12 @@ use hex;
 // hash = The Hash Function Chosen To Generate The Public Key and Verify The Signature
 // n = The Number of Bytes To Sign (and number of keypairs generated)
 // d = Secret Key Size in Bytes as a member of the set {32,48,64,128}
+
+// For Developers:
+// * The message being signed can only be in hexadecimal and a string
+// * The message is decoded from hex into bytes before signing/verifying
+// * You can sign a message that is shorter than the public key without receiving errors (only a warning). However, verifying the public key against itself in the signature will invalidate the public key.
+// * The Hash Functions take as input a hexadecimal string and decodes them
 
 
 
@@ -51,6 +58,9 @@ pub enum Algorithms {
 /// - `d` = `32` | Generates a Secret Key Size of 32 bytes (256 bits)
 /// 
 /// ## Generation and Signing
+/// 
+/// **Note: You can only sign hexadecimal strings.**
+/// 
 /// ```
 /// use leslie_lamport::{LamportKeyPair,Algorithms};
 /// 
@@ -70,6 +80,7 @@ pub enum Algorithms {
 /// ```
 /// use leslie_lamport::{LamportKeyPair,Algorithms};
 /// use serde_yaml;
+/// use bincode;
 /// 
 /// 
 /// // Basic Generation Using SHA256
@@ -78,8 +89,14 @@ pub enum Algorithms {
 /// // Serialization Of Keypair To YAML String (Keep Private)
 /// let serialized_keypair = serde_yaml::to_string(&keypair);
 /// 
+/// // Serialization of Keypair to Bincode (Keep Private)
+/// let bincode_keypair = bincode::serialize(&keypair).unwrap();
+/// 
 /// // Deserialization of YAML Keypair To LamportKeyPair
 /// let deserialized_keypair: LamportKeyPair = serde_yaml::from_str(&serialized_keypair).unwrap();
+/// 
+/// // Deserialization of Bincode Keypair To LamportKeyPair
+/// let deserialized_bincode: LamportKeyPair = bincode::deserialize(&keypair).unwrap()
 /// 
 /// ```
 /// 
@@ -92,6 +109,9 @@ pub struct LamportKeyPair {
 }
 
 /// # Lamport Signature
+/// 
+/// **NOTE: The message being signed must be in Hexadecimal**
+/// 
 /// After Signing with the `LamportKeyPair` struct, you can keep the `LamportSignature` struct **Public**. Your `LamportKeyPair` will now be useless for signing as it's a **One-Time Signature**.
 /// 
 /// This Struct Contains:
@@ -101,7 +121,7 @@ pub struct LamportKeyPair {
 /// - The Signature as a `Vector<Strings>`
 /// 
 /// ## Example Usage
-/// Its Only Function is for **Verification Purposes**
+/// Its only function is for **Verification Purposes**.
 /// 
 /// ```
 /// use leslie_lamport::{LamportKeyPair,Algorithms,LamportSignature};
@@ -120,6 +140,7 @@ pub struct LamportKeyPair {
 pub struct LamportSignature {
     pub hash: Algorithms,
     pub pk: Vec<String>,
+    // Input must be in hexadecimal
     pub input: String,
     pub signature: Vec<String>,
 }
@@ -152,6 +173,22 @@ impl LamportKeyPair {
     ///     let keypair_blake2b_64 = LamportKeyPair::generate(Algorithms::BLAKE2B_64);
     /// 
     /// }
+    /// ```
+    /// 
+    /// ## Signing
+    /// ```
+    /// use leslie_lamport::{LamportKeyPair, LamportSignature, Algorithms};
+    /// 
+    /// fn main(){
+    ///     // Generate Lamport Keypairs
+    ///     let keypair = LamportKeyPair::generate(Algorithms::OS_SHA256);
+    ///     
+    ///     // Generate Lamport Signature
+    ///     let sig = keypair.sign("b7dba1bc67c531bffb14fbd7f6948540dba10981765a0538575bed2b6bf553d43f35c287635ef7c4cb2c379f71218edaf70d5d73844910684103b99916e428c2");
+    ///     
+    ///     // Verify Signature
+    ///     let is_verified: bool = sig.verify();
+    /// }    
     /// ```
     pub fn generate(hash: Algorithms) -> LamportKeyPair {
         // (n, d)
@@ -213,11 +250,14 @@ impl LamportKeyPair {
             }
         }
         else {
-            panic!("Invalid Parameter for `d`. `d` should be a member of the set {32,48,64,128}")
+            panic!("Invalid Parameter for `d`. `d` should be a member of the set [32,48,64,128]")
         }
     }
     
     /// Internal Generation For Secret Key
+    /// 
+    /// For Developers:
+    /// * The Secret Key is encoded in hexadecimal
     fn generate_sk(n: usize,d: usize) -> Vec<String> {
         // Initialize Empty Vector That Will Be Of Size n
         let mut sk_vec = Vec::new();
@@ -255,6 +295,9 @@ impl LamportKeyPair {
         return sk_vec
     }
     /// Internal Generation For Public Key
+    /// 
+    /// For Developers:
+    /// * The Secret Key is in hexadecimal and when passed to the hash function, is decoded into bytes
     fn generate_pk(sk_vec: Vec<String>,hash: Algorithms) -> Vec<String> {
         // Initialize Public Key Vector
         let mut pk_vec = Vec::new();
@@ -279,8 +322,8 @@ impl LamportKeyPair {
     ///     - It Panics
     /// - If Too Small:
     ///     - A Notice is Printed
-    /// - If Just Right:
-    ///     - A Notice is Printed
+    /// For Developers:
+    /// * The Hexadecimal String is converted to bytes before signing
     pub fn sign(&self, input: &str) -> LamportSignature {
         // Convert Bytes as Hexadecimal
         let bytes = hex::decode(input).unwrap();
@@ -288,7 +331,7 @@ impl LamportKeyPair {
         // Gets Bytes Length
         let bytes_len: usize = bytes.len();
 
-        // Get (`n`), or number of bytes that can be signed with the given public key (`n` / 8 / 2)
+        // Get `n`, or number of bytes that can be signed with the given public key (`n` / 8 / 2)
         let pk_bytes: usize = self.pk.len() / 16usize;
         
         // TODO| Fix this so this is size of public key
@@ -343,14 +386,35 @@ impl LamportKeyPair {
 }
 
 impl LamportSignature {
+    // The `message_as_bytes` function returns the input message (in hexadecimal) to its corresponding bytes.
+    pub fn message_as_bytes(&self) -> Vec<u8> {
+        let bytes = hex::decode(&self.input).unwrap();
+        return bytes
+    }
+    /// The `verify_public_key` function verifies that the public key in the struct is the same as the one passed through to the parameters and that it is of the same size.
+    /// 
+    /// The Public Key MUST be a `vector of Strings`
+    /// 
+    /// For Developer: Maybe remove the check for public key vectors to be the same size as you can always generate a larger public key and only use part of it.
+    pub fn verify_public_key(&self, pk: Vec<String>) -> bool {
+        if self.pk == pk && self.pk.len() == pk.len() {
+            return true
+        }
+        else {
+            return false
+        }
+    }
     /// The Verify Function that returns a `boolean` value when verifying whether the signature matches the public key and input
     /// 
     /// It must:
     /// - The **Number of Public Keys** must be divisible by `8` and then `2` to retrieve `n`
     /// - THe **Number of Signatures** must be at most half of the Public Keys
     /// - The **Input** Must Be At Most The Size Of `n` in Bytes And Be In **Hexadecimal** (which is converted to binary)
+    /// 
+    /// For Developers:
+    /// * The message is converted from hexadecimal to bytes before verifying
     pub fn verify(&self) -> bool {
-        // Get Bytes From Hexadecimal
+        // Get Bytes From Hexadecimal Input
         let bytes = hex::decode(&self.input).unwrap();
 
         // Get Bytes Length
@@ -480,6 +544,9 @@ impl LamportSignature {
         return true
     }
 }
+
+// For Developers:
+// * The input to each hash function is in hexadecimal and requires hexadecimal decoding
 
 /// Private Hash Blake2b (32byte Digest)
 fn hash_blake2b(input: String) -> String {

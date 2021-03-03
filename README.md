@@ -13,6 +13,14 @@ A Library For The Post-Quantum Digital Signature Scheme **Lamport Signatures** c
 
 ## How To Generate Keys
 
+Default Generation creates **1024 keypairs** that can sign up to **64 bytes** and has a **secret key size of 32 bytes**. These are the default parameters that simple generation has:
+
+* `n` = 64
+
+* `d` = 32 | `d` ∈ 32,48,64,128
+
+The `hash` is chosen by the user.
+
 ```rust
 use leslie_lamport::{LamportKeyPair,LamportSignature,Algorithms};
 
@@ -25,6 +33,9 @@ fn main(){
     
     // Generate Keypair using Rust Library For Blake2b
     let keypair_blake2b = LamportKeyPair::generate(Algorithms::BLAKE2B);
+
+    // Generates Keypaur using Rust Library For Blake2b (64 bytes)
+    let keypair_blake2b_64 = LamportKeyPair::generate(Algorithms::BLAKE2B_64);
 }
 ```
 
@@ -48,11 +59,74 @@ fn main(){
 }
 ```
 
+## Parameters
+
+### `hash`
+
+`hash` is the **hash function** you would like to use. There are four options:
+
+* OS_SHA256
+    * 32 bytes (256 bits)
+    * Uses Operating System through `crypto-hash` crate
+
+* OS_SHA512
+    * 64 bytes (512 bits)
+    * Uses Operating System through `crypto-hash` crate
+
+* BLAKE2B
+    * 32 bytes (256 bits)
+    * Uses Rust Library
+
+* BLAKE2B_64
+    * 64 bytes (512 bits)
+    * Uses Rust Library
+
+### `d`
+
+> `d` ∈ 32,48,64,128 | The default is 32 bytes
+
+`d` is the **size of the secret key** in bytes. The secret key is generated using the `getrandom` crate which uses the operating system to generate randomness.
+
+### `n`
+
+> Number of Keypairs: `(8*n)*2` | The default is 64 bytes
+
+`n` **represents the number of keypairs generated and the number of bytes you will be able to sign**.
+
+1024 keypairs will sign 512 bits.
+
+
+## `crypto-hash` crate
+
+The [crypto-hash](https://github.com/malept/crypto-hash) crate uses the operating system to generate hashes. It does this through:
+
+* CryptoAPI (Windows)
+
+* CommonCrypto (OS X)
+
+* OpenSSL (Linux,BSD)
+
+It depends on:
+
+* winapi
+
+* commoncrypto
+
+* openssl
+
+* hex
+
+## `getrandom` crate
+
+The `getrandom` crate generates randomness using the operating system.
+
 ## License
 
 Licensed under:
 
 * Apache License, Version 2.0
+
+* MIT License
 
 ## Contribution
 
