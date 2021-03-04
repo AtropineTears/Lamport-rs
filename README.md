@@ -1,6 +1,7 @@
 # Leslie_Lamport
 
 [![Crates.io](https://img.shields.io/crates/v/leslie_lamport?style=flat-square)](https://crates.io/crates/leslie_lamport)
+[![Build Status](https://travis-ci.org/0xAtropine/Leslie-Lamport.svg?branch=master)](https://travis-ci.org/0xAtropine/Leslie-Lamport)
 ![Crates.io](https://img.shields.io/crates/l/leslie_lamport?style=flat-square)
 
 A Library For The Post-Quantum Digital Signature Scheme **Lamport Signatures** created by Leslie Lamport in 1979.
