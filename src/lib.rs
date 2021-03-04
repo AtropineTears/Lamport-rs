@@ -75,32 +75,7 @@ pub enum Algorithms {
 /// 
 /// ```
 /// 
-/// ## Serialization
-/// 
-/// ```
-/// use leslie_lamport::{LamportKeyPair,Algorithms};
-/// use serde_yaml;
-/// use bincode;
-/// 
-/// 
-/// // Basic Generation Using SHA256
-/// let keypair = LamportKeyPair::generate(Algorithms::OS_SHA256);
-/// 
-/// // Serialization Of Keypair To YAML String (Keep Private)
-/// let serialized_keypair = serde_yaml::to_string(&keypair);
-/// 
-/// // Serialization of Keypair to Bincode (Keep Private)
-/// let bincode_keypair = bincode::serialize(&keypair).unwrap();
-/// 
-/// // Deserialization of YAML Keypair To LamportKeyPair
-/// let deserialized_keypair: LamportKeyPair = serde_yaml::from_str(&serialized_keypair).unwrap();
-/// 
-/// // Deserialization of Bincode Keypair To LamportKeyPair
-/// let deserialized_bincode: LamportKeyPair = bincode::deserialize(&keypair).unwrap()
-/// 
-/// ```
-/// 
-/// This struct derives **Serialize** and **Deserialize** from **serde**.
+/// This struct also derives **Serialize** and **Deserialize** from **serde**.
 #[derive(Debug,Clone,PartialEq,PartialOrd,Hash,Serialize,Deserialize)]
 pub struct LamportKeyPair {
     pub hash: Algorithms,
@@ -440,6 +415,7 @@ impl LamportSignature {
         // Initialize String
         let mut bin_string = String::new();
 
+        // Change Format To Binary
         for byte in bytes {
             bin_string.push_str(&format!("{:08b}",byte));
         }
@@ -453,7 +429,7 @@ impl LamportSignature {
             _ => 0usize,
         };
         
-        // General Check To See If Hash Function Is Not Specified
+        // General Check To See If Hash Function Is Not Specified. If 0usize, then panic.
         if hash_choice != 1usize && hash_choice != 2usize && hash_choice != 3usize && hash_choice != 4usize {
             panic!("[Error] Cannot Determine Hash Function For Verification")
         }

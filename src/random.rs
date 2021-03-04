@@ -1,3 +1,4 @@
+// Crate For Operating System Randomness
 use getrandom;
 
 /// Internal OS Randomness For 32-bytes using `getrandom` crate
@@ -19,6 +20,7 @@ pub fn random_128() -> [u8;128]{
     return get_random_buf_128().unwrap()
 }
 
+// Below is the functions used to return randomness
 fn get_random_buf() -> Result<[u8; 32], getrandom::Error> {
     let mut buf = [0u8; 32];
     getrandom::getrandom(&mut buf)?;

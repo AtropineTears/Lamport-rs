@@ -25,6 +25,7 @@ name = "advanced_generation"
 path = "examples/advanced_generation.rs"
 
 [dependencies]
+# Randomness
 # Used to be 0.1.16
 getrandom = "0.2.2"
 
