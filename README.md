@@ -1,4 +1,4 @@
-# Leslie_Lamport
+# Lamport-rs
 
 [![Crates.io](https://img.shields.io/crates/v/leslie_lamport?style=flat-square)](https://crates.io/crates/leslie_lamport)
 [![Build Status](https://travis-ci.org/0xAtropine/Leslie-Lamport.svg?branch=master)](https://travis-ci.org/0xAtropine/Leslie-Lamport)
